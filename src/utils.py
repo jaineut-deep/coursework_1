@@ -7,7 +7,6 @@ from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from dotenv import load_dotenv
 from pandas import DataFrame
 
-
 past_currency = os.path.dirname(os.path.dirname(__file__)) + "/safe_currency.json"
 user_settings_path = os.path.dirname(os.path.dirname(__file__)) + "/user_settings.json"
 data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
@@ -19,42 +18,60 @@ def get_frame_operations() -> DataFrame:
     """
 
     all_operations_df = pd.read_excel(data_path)
-    all_operations_df.rename(columns=lambda x: x.replace(' ', '_') if isinstance(x, str) else x,
-                             inplace=True)
+    all_operations_df.rename(columns=lambda x: x.replace(" ", "_") if isinstance(x, str) else x, inplace=True)
     executed_operations_df = all_operations_df[all_operations_df["Статус"] == "OK"]
-    executed_operations_df.drop(["Дата_платежа", "Номер_карты", "Статус", "MCC", "Бонусы_(включая_кэшбэк)",
-                                 "Округление_на_инвесткопилку"], axis=1, inplace=True)
+    executed_operations_df.drop(
+        ["Дата_платежа", "Номер_карты", "Статус", "MCC", "Бонусы_(включая_кэшбэк)", "Округление_на_инвесткопилку"],
+        axis=1,
+        inplace=True,
+    )
     executed_operations_df["Дата_операции"] = pd.to_datetime(executed_operations_df["Дата_операции"], dayfirst=True)
     indexed_executed_df = executed_operations_df.reset_index(drop=True)
     inner_transfer_index_list = []
     for idx in range(len(indexed_executed_df) - 2):
-        if ((indexed_executed_df.iloc[idx, 1] != indexed_executed_df.iloc[(idx + 1), 1]) and
-                (abs(indexed_executed_df.iloc[idx, 1]) == abs(indexed_executed_df.iloc[(idx + 1), 1])) and
-                (indexed_executed_df.iloc[idx, 7] == indexed_executed_df.iloc[(idx + 1), 7])):
+        if (
+            (indexed_executed_df.iloc[idx, 1] != indexed_executed_df.iloc[(idx + 1), 1])
+            and (abs(indexed_executed_df.iloc[idx, 1]) == abs(indexed_executed_df.iloc[(idx + 1), 1]))
+            and (indexed_executed_df.iloc[idx, 7] == indexed_executed_df.iloc[(idx + 1), 7])
+        ):
             inner_transfer_index_list.extend([idx, (idx + 1)])
     charge_payment_df = indexed_executed_df.loc[~(indexed_executed_df.index.isin(inner_transfer_index_list))]
     indexed_df = charge_payment_df.reset_index(drop=True)
-    indexed_df["Сумма_операции"] = indexed_df["Сумма_операции"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
-    indexed_df["Сумма_платежа"] = indexed_df["Сумма_платежа"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
-    indexed_df["Сумма_операции_с_округлением"] = (
-        indexed_df["Сумма_операции_с_округлением"].apply(lambda x: Decimal(x).quantize(Decimal('0.00'))))
-    mask_currency_ruble = ((indexed_df["Валюта_операции"] != "RUB") & (indexed_df["Валюта_платежа"] == "RUB"))
-    mask_ruble_currency = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] != "RUB"))
-    mask_ruble_positive = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] == "RUB") &
-                           (indexed_df["Сумма_операции"] > 0))
-    mask_ruble_negative = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] == "RUB") &
-                           (indexed_df["Сумма_операции"] < 0))
+    indexed_df["Сумма_операции"] = indexed_df["Сумма_операции"].transform(
+        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
+    )
+    indexed_df["Сумма_платежа"] = indexed_df["Сумма_платежа"].transform(
+        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
+    )
+    indexed_df["Сумма_операции_с_округлением"] = indexed_df["Сумма_операции_с_округлением"].transform(
+        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))  # type: ignore
+    )
+    mask_currency_ruble = (indexed_df["Валюта_операции"] != "RUB") & (indexed_df["Валюта_платежа"] == "RUB")
+    mask_ruble_currency = (indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] != "RUB")
+    mask_ruble_positive = (
+        (indexed_df["Валюта_операции"] == "RUB")
+        & (indexed_df["Валюта_платежа"] == "RUB")
+        & (indexed_df["Сумма_операции"] > 0)
+    )
+    mask_ruble_negative = (
+        (indexed_df["Валюта_операции"] == "RUB")
+        & (indexed_df["Валюта_платежа"] == "RUB")
+        & (indexed_df["Сумма_операции"] < 0)
+    )
     indexed_df.loc[mask_currency_ruble, "Итого"] = indexed_df.loc[mask_currency_ruble, "Сумма_платежа"]
     indexed_df.loc[mask_ruble_currency, "Итого"] = indexed_df.loc[mask_ruble_currency, "Сумма_операции"]
     indexed_df.loc[mask_ruble_positive, "Итого"] = indexed_df.loc[mask_ruble_positive, "Сумма_операции_с_округлением"]
     indexed_df.loc[mask_ruble_negative, "Итого"] = indexed_df["Сумма_операции_с_округлением"].where(
-        cond=~mask_ruble_negative, other=lambda x: x * (-1))
+        cond=~mask_ruble_negative, other=lambda x: x * (-1)
+    )
     for idx in range(len(indexed_df) - 1):
         if (indexed_df.loc[idx, "Валюта_операции"] != "RUB") & (indexed_df.loc[idx, "Валюта_платежа"] != "RUB"):
-            indexed_df.loc[idx, "Итого"] =\
-                (get_currency_rate(indexed_df.loc[idx, "Дата_операции"], indexed_df.loc[idx, "Валюта_операции"]) *
-                 indexed_df.loc[idx, "Сумма_операции"]).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+            indexed_df.loc[idx, "Итого"] = (
+                get_currency_rate(indexed_df.loc[idx, "Дата_операции"], str(indexed_df.loc[idx, "Валюта_операции"]))
+                * Decimal(indexed_df.loc[idx, "Сумма_операции"])
+            ).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
     return indexed_df
+
 
 def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
     """
@@ -70,11 +87,12 @@ def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
         "W": (spec_date_format - datetime.timedelta(days=(spec_date_format.isoweekday() - 1))),
         "M": spec_date_format.replace(spec_date_format.year, spec_date_format.month, 1),
         "Y": spec_date_format.replace(spec_date_format.year, 1, 1),
-        "ALL": primary_df["Дата_операции"].tail(1).iloc[0].to_pydatetime()
+        "ALL": primary_df["Дата_операции"].tail(1).iloc[0].to_pydatetime(),
     }
     date_border = days_kit[spec_range]
     at_date_df = primary_df.loc[primary_df["Дата_операции"] <= spec_date_full]
-    return at_date_df.loc[date_border <= at_date_df["Дата_операции"]]
+    return at_date_df.loc[at_date_df["Дата_операции"] >= pd.Timestamp(date_border)]
+
 
 def get_frame_expenses(operations_df: DataFrame) -> dict:
     """
@@ -84,27 +102,35 @@ def get_frame_expenses(operations_df: DataFrame) -> dict:
 
     selected_expenses_df = operations_df.loc[operations_df.Итого < 0]
     selected_indexed_df = selected_expenses_df.reset_index(drop=True)
-    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    # selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal("0.00")))
     total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
     total_sum_df.sort_values(by="Итого", ascending=True, inplace=True)
     expenses_abs_df = total_sum_df.apply(pd.Series.abs)
-    expenses_total = int(expenses_abs_df.apply(pd.Series.sum).values[0].quantize(Decimal("1."), ROUND_HALF_EVEN))
+    expenses_total = int(
+        Decimal(float(expenses_abs_df.apply(pd.Series.sum).values[0])).quantize(Decimal("1."), ROUND_HALF_EVEN)
+    )
     expenses_all_dict = expenses_abs_df.to_dict()["Итого"]
     remit_value = int(expenses_all_dict.pop("Переводы", Decimal("0")).quantize(Decimal("1."), ROUND_HALF_EVEN))
     cash_value = int(expenses_all_dict.pop("Наличные", Decimal("0")).quantize(Decimal("1."), ROUND_HALF_EVEN))
     trans_cash_list = [{"category": "Переводы", "amount": remit_value}, {"category": "Наличные", "amount": cash_value}]
-    trans_cash_list.sort(key=lambda operation: operation["amount"], reverse=True)
+    trans_cash_list.sort(key=lambda x: (x["amount"], x["category"]), reverse=True)
     expenses_collection = list(expenses_all_dict.items())
-    expenses_list_rounded = list(map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))),
-                                     expenses_collection))
+    expenses_list_rounded = list(
+        map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))), expenses_collection)
+    )
     main_expenses_list = [{"category": key, "amount": value} for key, value in expenses_list_rounded[:7]]
-    expenses_remaining = sum([twain[1] for twain in expenses_collection[7:]]) if len(expenses_collection) > 7\
-        else Decimal("0")
+    expenses_remaining = (
+        sum([twain[1] for twain in expenses_collection[7:]]) if len(expenses_collection) > 7 else Decimal("0")
+    )
     expenses_remaining_rounded = int(expenses_remaining.quantize(Decimal("1."), ROUND_HALF_EVEN))
     main_expenses_list.append({"category": "Остальное", "amount": expenses_remaining_rounded})
-    expenses_category_dict = {"total_amount": expenses_total, "main": main_expenses_list,
-                              "transfers_and_cash": trans_cash_list}
+    expenses_category_dict = {
+        "total_amount": expenses_total,
+        "main": main_expenses_list,
+        "transfers_and_cash": trans_cash_list,
+    }
     return expenses_category_dict
+
 
 def get_frame_income(operations_selected_df: DataFrame) -> dict:
     """
@@ -114,21 +140,28 @@ def get_frame_income(operations_selected_df: DataFrame) -> dict:
 
     selected_expenses_df = operations_selected_df.loc[operations_selected_df.Итого > 0]
     selected_indexed_df = selected_expenses_df.reset_index(drop=True)
-    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    # selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal("0.00")))
     total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
     if total_sum_df.shape == (0, 0):
         return {"total_amount": 0, "main": []}
     else:
         total_sum_df.sort_values(by="Итого", ascending=False, inplace=True)
         income_abs_df = total_sum_df.apply(pd.Series.abs)
-        income_total = int(income_abs_df.apply(pd.Series.sum).values[0].quantize(Decimal("1."), ROUND_HALF_EVEN))
+        income_total = int(
+            Decimal(float(income_abs_df.apply(pd.Series.sum).values[0])).quantize(Decimal("1."), ROUND_HALF_EVEN)
+        )
         income_all_dict = income_abs_df.to_dict()["Итого"]
         income_collection = list(income_all_dict.items())
-        income_list_rounded = list(map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))),
-                                         income_collection))
+        income_list_rounded = list(
+            map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))), income_collection)
+        )
         main_income_list = [{"category": key, "amount": value} for key, value in income_list_rounded]
-        income_category_dict = {"total_amount": income_total, "main": main_income_list,}
+        income_category_dict = {
+            "total_amount": income_total,
+            "main": main_income_list,
+        }
         return income_category_dict
+
 
 def get_currency_stock_prices(user_date: str) -> dict:
     """
@@ -148,7 +181,8 @@ def get_currency_stock_prices(user_date: str) -> dict:
     currency_stock = {"currency_rates": currencies_list, "stock_prices": stocks_list}
     return currency_stock
 
-def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> Decimal | None:
+
+def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> Decimal:
     """
     Функция принимает дату и валюту в виде строки для конвертации, а возвращает курс валюты в рублях.
     """
@@ -165,7 +199,8 @@ def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> D
         response = requests.get(
             f"https://api.twelvedata.com/time_series?apikey={twelvedata_api_key}&interval=1day&symbol="
             f"{stated_currency}/RUB&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
-            f"{stated_next_date_str} 23:59:00")
+            f"{stated_next_date_str} 23:59:00"
+        )
     except requests.exceptions.ConnectionError as err:
         raise SystemExit(err)
     except requests.exceptions.HTTPError as err:
@@ -173,22 +208,30 @@ def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> D
     except requests.exceptions.Timeout as err:
         raise SystemExit(err)
     status_code = response.status_code
+    result_value = Decimal("0.01")
     if status_code == 200:
         currency_values = response.json().get("values", past_data["values"])
         for day_price in currency_values:
             if day_price["datetime"] == stated_date_str:
-                return Decimal(day_price["close"])
+                result_value = Decimal(day_price["close"])
             elif day_price["datetime"] == stated_next_date_str:
-                return Decimal(day_price["close"])
+                result_value = Decimal(day_price["close"])
+            else:
+                result_value = Decimal("0.02")
+        return result_value
     else:
         past_cur_values = past_data["values"]
         for day_price in past_cur_values:
             if day_price["datetime"] == stated_date_str:
-                return Decimal(day_price["close"])
+                result_value = Decimal(day_price["close"])
             elif day_price["datetime"] == stated_next_date_str:
-                return Decimal(day_price["close"])
+                result_value = Decimal(day_price["close"])
+            else:
+                result_value = Decimal("0.03")
+        return result_value
 
-def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> Decimal | None:
+
+def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> str:
     """
     Функция принимает дату и акцию в виде строки для конвертации, а возвращает курс акции в долларах(USD).
     """
@@ -203,7 +246,8 @@ def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> 
         response = requests.get(
             f"https://api.twelvedata.com/time_series?apikey={twelvedata_api_key}&interval=1day&symbol="
             f"{indicated_stock}&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
-            f"{stated_next_date_str} 23:59:00")
+            f"{stated_next_date_str} 23:59:00"
+        )
     except requests.exceptions.ConnectionError as err:
         raise SystemExit(err)
     except requests.exceptions.HTTPError as err:
@@ -211,12 +255,16 @@ def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> 
     except requests.exceptions.Timeout as err:
         raise SystemExit(err)
     status_code = response.status_code
+    stock_string = "0.01"
     if status_code == 200:
         currency_values = response.json().get("values", [{"datetime": stated_date_str, "close": "0.00"}])
         for day_price in currency_values:
             if day_price["datetime"] == stated_date_str:
-                return Decimal(day_price["close"])
+                stock_string = day_price["close"]
             elif day_price["datetime"] == stated_next_date_str:
-                return Decimal(day_price["close"])
+                stock_string = day_price["close"]
+            else:
+                stock_string = "0.02"
+        return stock_string
     else:
-        return None
+        return stock_string
