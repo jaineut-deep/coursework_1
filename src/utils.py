@@ -131,7 +131,22 @@ def get_frame_income(operations_selected_df: DataFrame) -> dict:
         return income_category_dict
 
 def get_currency_stock_prices(user_date: str) -> dict:
-    pass
+    """
+    Функция принимает дату в виде строки, а возвращает словарь с данными по курсам валют и акций за указанную дату.
+    """
+
+    with open(user_settings_path) as cur_data:
+        curr_stock_dict = json.load(cur_data)
+    spec_date_obj = datetime.datetime.strptime(user_date, "%d.%m.%Y")
+    spec_date_format = spec_date_obj.replace(spec_date_obj.year, spec_date_obj.month, spec_date_obj.day)
+    currencies_list = []
+    for idx in curr_stock_dict["user_currencies"]:
+        currencies_list.append({"currency": idx, "rate": float(get_currency_rate(spec_date_format, idx))})
+    stocks_list = []
+    for idx in curr_stock_dict["user_stocks"]:
+        stocks_list.append({"stock": idx, "price": float(get_stock_price(spec_date_format, idx))})
+    currency_stock = {"currency_rates": currencies_list, "stock_prices": stocks_list}
+    return currency_stock
 
 def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> Decimal | None:
     """
