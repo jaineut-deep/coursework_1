@@ -3,7 +3,7 @@ import json
 import os
 import pandas as pd
 import requests
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from dotenv import load_dotenv
 from pandas import DataFrame
 
@@ -77,10 +77,58 @@ def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
     return at_date_df.loc[date_border <= at_date_df["Дата_операции"]]
 
 def get_frame_expenses(operations_df: DataFrame) -> dict:
-    pass
+    """
+    Функция принимает данные по транзакциям, а возвращает данные о сумме трат всего и по категориям за определенный
+    период времени.
+    """
+
+    selected_expenses_df = operations_df.loc[operations_df.Итого < 0]
+    selected_indexed_df = selected_expenses_df.reset_index(drop=True)
+    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
+    total_sum_df.sort_values(by="Итого", ascending=True, inplace=True)
+    expenses_abs_df = total_sum_df.apply(pd.Series.abs)
+    expenses_total = int(expenses_abs_df.apply(pd.Series.sum).values[0].quantize(Decimal("1."), ROUND_HALF_EVEN))
+    expenses_all_dict = expenses_abs_df.to_dict()["Итого"]
+    remit_value = int(expenses_all_dict.pop("Переводы", Decimal("0")).quantize(Decimal("1."), ROUND_HALF_EVEN))
+    cash_value = int(expenses_all_dict.pop("Наличные", Decimal("0")).quantize(Decimal("1."), ROUND_HALF_EVEN))
+    trans_cash_list = [{"category": "Переводы", "amount": remit_value}, {"category": "Наличные", "amount": cash_value}]
+    trans_cash_list.sort(key=lambda operation: operation["amount"], reverse=True)
+    expenses_collection = list(expenses_all_dict.items())
+    expenses_list_rounded = list(map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))),
+                                     expenses_collection))
+    main_expenses_list = [{"category": key, "amount": value} for key, value in expenses_list_rounded[:7]]
+    expenses_remaining = sum([twain[1] for twain in expenses_collection[7:]]) if len(expenses_collection) > 7\
+        else Decimal("0")
+    expenses_remaining_rounded = int(expenses_remaining.quantize(Decimal("1."), ROUND_HALF_EVEN))
+    main_expenses_list.append({"category": "Остальное", "amount": expenses_remaining_rounded})
+    expenses_category_dict = {"total_amount": expenses_total, "main": main_expenses_list,
+                              "transfers_and_cash": trans_cash_list}
+    return expenses_category_dict
 
 def get_frame_income(operations_selected_df: DataFrame) -> dict:
-    pass
+    """
+    Функция принимает данные по транзакциям, а возвращает данные о сумме поступлений всего и по категориям за
+    определенный период времени.
+    """
+
+    selected_expenses_df = operations_selected_df.loc[operations_selected_df.Итого > 0]
+    selected_indexed_df = selected_expenses_df.reset_index(drop=True)
+    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
+    if total_sum_df.shape == (0, 0):
+        return {"total_amount": 0, "main": []}
+    else:
+        total_sum_df.sort_values(by="Итого", ascending=False, inplace=True)
+        income_abs_df = total_sum_df.apply(pd.Series.abs)
+        income_total = int(income_abs_df.apply(pd.Series.sum).values[0].quantize(Decimal("1."), ROUND_HALF_EVEN))
+        income_all_dict = income_abs_df.to_dict()["Итого"]
+        income_collection = list(income_all_dict.items())
+        income_list_rounded = list(map(lambda x: (x[0], int(x[1].quantize(Decimal("1."), ROUND_HALF_EVEN))),
+                                         income_collection))
+        main_income_list = [{"category": key, "amount": value} for key, value in income_list_rounded]
+        income_category_dict = {"total_amount": income_total, "main": main_income_list,}
+        return income_category_dict
 
 def get_currency_stock_prices(user_date: str) -> dict:
     pass
