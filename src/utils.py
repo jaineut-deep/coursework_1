@@ -57,7 +57,24 @@ def get_frame_operations() -> DataFrame:
     return indexed_df
 
 def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
-    pass
+    """
+    Функция принимает дату и обозначение диапазона дат в виде строк, а возвращает данные по транзакциям клиента за
+    указанный диапазон дат.
+    """
+
+    primary_df = get_frame_operations()
+    spec_date_obj = datetime.datetime.strptime(spec_date, "%d.%m.%Y")
+    spec_date_format = spec_date_obj.replace(spec_date_obj.year, spec_date_obj.month, spec_date_obj.day)
+    spec_date_full = spec_date_format.replace(hour=23, minute=59, second=59)
+    days_kit = {
+        "W": (spec_date_format - datetime.timedelta(days=(spec_date_format.isoweekday() - 1))),
+        "M": spec_date_format.replace(spec_date_format.year, spec_date_format.month, 1),
+        "Y": spec_date_format.replace(spec_date_format.year, 1, 1),
+        "ALL": primary_df["Дата_операции"].tail(1).iloc[0].to_pydatetime()
+    }
+    date_border = days_kit[spec_range]
+    at_date_df = primary_df.loc[primary_df["Дата_операции"] <= spec_date_full]
+    return at_date_df.loc[date_border <= at_date_df["Дата_операции"]]
 
 def get_frame_expenses(operations_df: DataFrame) -> dict:
     pass
@@ -108,5 +125,35 @@ def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> D
             elif day_price["datetime"] == stated_next_date_str:
                 return Decimal(day_price["close"])
 
-def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str):
-    pass
+def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> Decimal | None:
+    """
+    Функция принимает дату и акцию в виде строки для конвертации, а возвращает курс акции в долларах(USD).
+    """
+
+    load_dotenv()
+    twelvedata_api_key = os.getenv("API_KEY")
+    indicated_date_obj = indicated_date.date()
+    stated_next_date_obj = indicated_date_obj + datetime.timedelta(days=1)
+    stated_date_str = indicated_date_obj.strftime("%Y-%m-%d")
+    stated_next_date_str = stated_next_date_obj.strftime("%Y-%m-%d")
+    try:
+        response = requests.get(
+            f"https://api.twelvedata.com/time_series?apikey={twelvedata_api_key}&interval=1day&symbol="
+            f"{indicated_stock}&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00")
+    except requests.exceptions.ConnectionError as err:
+        raise SystemExit(err)
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    except requests.exceptions.Timeout as err:
+        raise SystemExit(err)
+    status_code = response.status_code
+    if status_code == 200:
+        currency_values = response.json().get("values", [{"datetime": stated_date_str, "close": "0.00"}])
+        for day_price in currency_values:
+            if day_price["datetime"] == stated_date_str:
+                return Decimal(day_price["close"])
+            elif day_price["datetime"] == stated_next_date_str:
+                return Decimal(day_price["close"])
+    else:
+        return None
