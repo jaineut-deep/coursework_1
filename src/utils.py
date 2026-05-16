@@ -1,0 +1,112 @@
+import datetime
+import json
+import os
+import pandas as pd
+import requests
+from decimal import Decimal, ROUND_HALF_UP
+from dotenv import load_dotenv
+from pandas import DataFrame
+
+
+past_currency = os.path.dirname(os.path.dirname(__file__)) + "/safe_currency.json"
+user_settings_path = os.path.dirname(os.path.dirname(__file__)) + "/user_settings.json"
+data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
+
+
+def get_frame_operations() -> DataFrame:
+    """
+    Функция возвращает отфильтрованные данные всех расходов и поступлений по данным о транзакциях клиента.
+    """
+
+    all_operations_df = pd.read_excel(data_path)
+    all_operations_df.rename(columns=lambda x: x.replace(' ', '_') if isinstance(x, str) else x,
+                             inplace=True)
+    executed_operations_df = all_operations_df[all_operations_df["Статус"] == "OK"]
+    executed_operations_df.drop(["Дата_платежа", "Номер_карты", "Статус", "MCC", "Бонусы_(включая_кэшбэк)",
+                                 "Округление_на_инвесткопилку"], axis=1, inplace=True)
+    executed_operations_df["Дата_операции"] = pd.to_datetime(executed_operations_df["Дата_операции"], dayfirst=True)
+    indexed_executed_df = executed_operations_df.reset_index(drop=True)
+    inner_transfer_index_list = []
+    for idx in range(len(indexed_executed_df) - 2):
+        if ((indexed_executed_df.iloc[idx, 1] != indexed_executed_df.iloc[(idx + 1), 1]) and
+                (abs(indexed_executed_df.iloc[idx, 1]) == abs(indexed_executed_df.iloc[(idx + 1), 1])) and
+                (indexed_executed_df.iloc[idx, 7] == indexed_executed_df.iloc[(idx + 1), 7])):
+            inner_transfer_index_list.extend([idx, (idx + 1)])
+    charge_payment_df = indexed_executed_df.loc[~(indexed_executed_df.index.isin(inner_transfer_index_list))]
+    indexed_df = charge_payment_df.reset_index(drop=True)
+    indexed_df["Сумма_операции"] = indexed_df["Сумма_операции"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    indexed_df["Сумма_платежа"] = indexed_df["Сумма_платежа"].apply(lambda x: Decimal(x).quantize(Decimal('0.00')))
+    indexed_df["Сумма_операции_с_округлением"] = (
+        indexed_df["Сумма_операции_с_округлением"].apply(lambda x: Decimal(x).quantize(Decimal('0.00'))))
+    mask_currency_ruble = ((indexed_df["Валюта_операции"] != "RUB") & (indexed_df["Валюта_платежа"] == "RUB"))
+    mask_ruble_currency = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] != "RUB"))
+    mask_ruble_positive = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] == "RUB") &
+                           (indexed_df["Сумма_операции"] > 0))
+    mask_ruble_negative = ((indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] == "RUB") &
+                           (indexed_df["Сумма_операции"] < 0))
+    indexed_df.loc[mask_currency_ruble, "Итого"] = indexed_df.loc[mask_currency_ruble, "Сумма_платежа"]
+    indexed_df.loc[mask_ruble_currency, "Итого"] = indexed_df.loc[mask_ruble_currency, "Сумма_операции"]
+    indexed_df.loc[mask_ruble_positive, "Итого"] = indexed_df.loc[mask_ruble_positive, "Сумма_операции_с_округлением"]
+    indexed_df.loc[mask_ruble_negative, "Итого"] = indexed_df["Сумма_операции_с_округлением"].where(
+        cond=~mask_ruble_negative, other=lambda x: x * (-1))
+    for idx in range(len(indexed_df) - 1):
+        if (indexed_df.loc[idx, "Валюта_операции"] != "RUB") & (indexed_df.loc[idx, "Валюта_платежа"] != "RUB"):
+            indexed_df.loc[idx, "Итого"] =\
+                (get_currency_rate(indexed_df.loc[idx, "Дата_операции"], indexed_df.loc[idx, "Валюта_операции"]) *
+                 indexed_df.loc[idx, "Сумма_операции"]).quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+    return indexed_df
+
+def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
+    pass
+
+def get_frame_expenses(operations_df: DataFrame) -> dict:
+    pass
+
+def get_frame_income(operations_selected_df: DataFrame) -> dict:
+    pass
+
+def get_currency_stock_prices(user_date: str) -> dict:
+    pass
+
+def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> Decimal | None:
+    """
+    Функция принимает дату и валюту в виде строки для конвертации, а возвращает курс валюты в рублях.
+    """
+
+    with open(past_currency) as cur_data:
+        past_data = json.load(cur_data)
+    load_dotenv()
+    twelvedata_api_key = os.getenv("API_KEY")
+    stated_date_obj = stated_date.date()
+    stated_next_date_obj = stated_date_obj + datetime.timedelta(days=1)
+    stated_date_str = stated_date_obj.strftime("%Y-%m-%d")
+    stated_next_date_str = stated_next_date_obj.strftime("%Y-%m-%d")
+    try:
+        response = requests.get(
+            f"https://api.twelvedata.com/time_series?apikey={twelvedata_api_key}&interval=1day&symbol="
+            f"{stated_currency}/RUB&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00")
+    except requests.exceptions.ConnectionError as err:
+        raise SystemExit(err)
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    except requests.exceptions.Timeout as err:
+        raise SystemExit(err)
+    status_code = response.status_code
+    if status_code == 200:
+        currency_values = response.json().get("values", past_data["values"])
+        for day_price in currency_values:
+            if day_price["datetime"] == stated_date_str:
+                return Decimal(day_price["close"])
+            elif day_price["datetime"] == stated_next_date_str:
+                return Decimal(day_price["close"])
+    else:
+        past_cur_values = past_data["values"]
+        for day_price in past_cur_values:
+            if day_price["datetime"] == stated_date_str:
+                return Decimal(day_price["close"])
+            elif day_price["datetime"] == stated_next_date_str:
+                return Decimal(day_price["close"])
+
+def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str):
+    pass
