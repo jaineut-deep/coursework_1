@@ -3,6 +3,7 @@ import json
 import os
 import pandas as pd
 import requests
+from requests.exceptions import ConnectionError, Timeout, HTTPError
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from dotenv import load_dotenv
 from pandas import DataFrame
@@ -66,9 +67,10 @@ def get_frame_operations() -> DataFrame:
     )
     for idx in range(len(indexed_df) - 1):
         if (indexed_df.loc[idx, "Валюта_операции"] != "RUB") & (indexed_df.loc[idx, "Валюта_платежа"] != "RUB"):
-            indexed_df.loc[idx, "Итого"] = (
-                get_currency_rate(indexed_df.loc[idx, "Дата_операции"], str(indexed_df.loc[idx, "Валюта_операции"]))
-                * Decimal(indexed_df.loc[idx, "Сумма_операции"])
+            date_obj = indexed_df["Дата_операции"].iloc[idx].to_pydatetime()
+            rate = Decimal(get_currency_rate(date_obj, str(indexed_df.loc[idx, "Валюта_операции"])))
+            indexed_df.loc[idx, "Итого"] = (   # type: ignore
+                rate * Decimal(str(indexed_df.loc[idx, "Сумма_операции"]))
             ).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
     return indexed_df
 
@@ -102,7 +104,8 @@ def get_frame_expenses(operations_df: DataFrame) -> dict:
 
     selected_expenses_df = operations_df.loc[operations_df.Итого < 0]
     selected_indexed_df = selected_expenses_df.reset_index(drop=True)
-    # selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal("0.00")))
+    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].transform(
+        lambda x: Decimal(str(x)).quantize(Decimal("0.00")))   # type: ignore
     total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
     total_sum_df.sort_values(by="Итого", ascending=True, inplace=True)
     expenses_abs_df = total_sum_df.apply(pd.Series.abs)
@@ -140,7 +143,8 @@ def get_frame_income(operations_selected_df: DataFrame) -> dict:
 
     selected_expenses_df = operations_selected_df.loc[operations_selected_df.Итого > 0]
     selected_indexed_df = selected_expenses_df.reset_index(drop=True)
-    # selected_indexed_df["Итого"] = selected_indexed_df["Итого"].apply(lambda x: Decimal(x).quantize(Decimal("0.00")))
+    selected_indexed_df["Итого"] = selected_indexed_df["Итого"].transform(
+        lambda x: Decimal(str(x)).quantize(Decimal("0.00")))   # type: ignore
     total_sum_df = selected_indexed_df.pivot_table(index=["Категория"], values="Итого", aggfunc="sum")
     if total_sum_df.shape == (0, 0):
         return {"total_amount": 0, "main": []}
@@ -182,7 +186,7 @@ def get_currency_stock_prices(user_date: str) -> dict:
     return currency_stock
 
 
-def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> Decimal:
+def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> str:
     """
     Функция принимает дату и валюту в виде строки для конвертации, а возвращает курс валюты в рублях.
     """
@@ -201,33 +205,33 @@ def get_currency_rate(stated_date: datetime.datetime, stated_currency: str) -> D
             f"{stated_currency}/RUB&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
             f"{stated_next_date_str} 23:59:00"
         )
-    except requests.exceptions.ConnectionError as err:
-        raise SystemExit(err)
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(err)
-    except requests.exceptions.Timeout as err:
-        raise SystemExit(err)
+        if response.status_code == 404:
+            raise HTTPError(f"HTTP error: {response.status_code}")
+    except ConnectionError:
+        return "Connection failed"
+    except HTTPError as err:
+        return f"{err}"
+    except Timeout:
+        return "Request timed out"
     status_code = response.status_code
-    result_value = Decimal("0.01")
+    result_value = "0.01"
     if status_code == 200:
         currency_values = response.json().get("values", past_data["values"])
         for day_price in currency_values:
             if day_price["datetime"] == stated_date_str:
-                result_value = Decimal(day_price["close"])
+                result_value = day_price["close"]
             elif day_price["datetime"] == stated_next_date_str:
-                result_value = Decimal(day_price["close"])
+                result_value = day_price["close"]
             else:
-                result_value = Decimal("0.02")
+                result_value = "0.02"
         return result_value
     else:
         past_cur_values = past_data["values"]
         for day_price in past_cur_values:
             if day_price["datetime"] == stated_date_str:
-                result_value = Decimal(day_price["close"])
+                result_value = day_price["close"]
             elif day_price["datetime"] == stated_next_date_str:
-                result_value = Decimal(day_price["close"])
-            else:
-                result_value = Decimal("0.03")
+                result_value = day_price["close"]
         return result_value
 
 
@@ -248,12 +252,14 @@ def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> 
             f"{indicated_stock}&format=JSON&start_date={stated_date_str} 00:00:00&type=stock&dp=2&end_date="
             f"{stated_next_date_str} 23:59:00"
         )
-    except requests.exceptions.ConnectionError as err:
-        raise SystemExit(err)
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(err)
-    except requests.exceptions.Timeout as err:
-        raise SystemExit(err)
+        if response.status_code == 404:
+            raise HTTPError(f"HTTP error: {response.status_code}")
+    except ConnectionError:
+        return "Connection failed"
+    except HTTPError as err:
+        return f"{err}"
+    except Timeout:
+        return "Request timed out"
     status_code = response.status_code
     stock_string = "0.01"
     if status_code == 200:
