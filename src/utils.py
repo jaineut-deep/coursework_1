@@ -3,6 +3,7 @@ import json
 import os
 import pandas as pd
 import requests
+import sys
 from requests.exceptions import ConnectionError, Timeout, HTTPError
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from dotenv import load_dotenv
@@ -274,3 +275,41 @@ def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> 
         return stock_string
     else:
         return stock_string
+
+
+def filter_user_choice() -> tuple[str, str]:
+    """
+    Функция возвращает кортеж строк: дату и обозначение диапазона дат.
+    """
+
+    while True:
+        print(f"Введите дату вида 'dd.mm.YYYY':\n")
+        user_date = input()
+        print(
+            """
+        Выберите диапазон дат:
+        W -- данные за текущую неделю
+        M -- данные за текущий месяц
+        Y -- данные за текущий год
+        ALL -- данные за всё время
+        """
+        )
+        user_range = input()
+        term_dates = ()
+        try:
+            datetime.datetime.strptime(user_date, "%d.%m.%Y")
+
+            if (datetime.datetime.strptime(user_date, "%d.%m.%Y") and
+                    (user_range.upper() in ["W", "M", "Y", "ALL"])):
+                term_dates = (user_date, user_range.upper())
+                break
+        except ValueError:
+            print("Указанной даты не существует")
+        more_input = input(f"Неверный формат введенных данных\nПопробуете снова? Y/N\n")
+        if more_input.upper() == "N":
+            sys.exit(0)
+        elif more_input.upper() == "Y":
+            continue
+        else:
+            continue
+    return term_dates
