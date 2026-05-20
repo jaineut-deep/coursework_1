@@ -7,23 +7,21 @@ from dotenv import load_dotenv
 from pandas import DataFrame
 from unittest.mock import patch
 from src.utils import (get_frame_expenses, get_frame_income, get_currency_stock_prices, get_currency_rate,
-                       get_stock_price, filter_user_choice)
-
-refined_data_path = os.path.dirname(os.path.dirname(__file__)) + "/refined.xlsx"
+                       get_stock_price, filter_user_choice, file_write_path)
 
 
 def get_year_df() -> DataFrame:
-    entire_df = pd.read_excel(refined_data_path)
+    entire_df = pd.read_excel(file_write_path)
     return entire_df[3204:4947]  # 2019-12-29 22:28:13 / 2019-01-02 14:09:11
 
 
 def get_month_df() -> DataFrame:
-    entire_df = pd.read_excel(refined_data_path)
+    entire_df = pd.read_excel(file_write_path)
     return entire_df[3998:4093]  # 2019-07-16 16:30:10 / 2019-07-01 12:40:51
 
 
 def get_week_df() -> DataFrame:
-    entire_df = pd.read_excel(refined_data_path)
+    entire_df = pd.read_excel(file_write_path)
     return entire_df[4714:4730]  # 2019-03-09 19:47:28 / 2019-03-04 09:48:14
 
 
@@ -35,7 +33,7 @@ def get_week_df() -> DataFrame:
         (get_year_df(), "09.03.2019", "W", get_week_df()),
     ],
 )
-def test_span_operations(mock_data, chosen_date, chosen_range, expected_df):
+def test_span_operations(mock_data: DataFrame, chosen_date: str, chosen_range: str, expected_df: DataFrame) -> None:
     with patch("src.utils.get_frame_operations", return_value=mock_data):
         from src.utils import get_span_operations
 
@@ -104,7 +102,7 @@ def test_span_operations(mock_data, chosen_date, chosen_range, expected_df):
         ),
     ],
 )
-def test_frame_expenses(primary_df, output_dict):
+def test_frame_expenses(primary_df: DataFrame, output_dict: dict) -> None:
     result = get_frame_expenses(primary_df)
     assert result == output_dict
 
@@ -141,7 +139,7 @@ def test_frame_expenses(primary_df, output_dict):
         (get_month_df()[-49:-40], {"total_amount": 0, "main": []}),
     ],
 )
-def test_frame_income(income_df, final_dict):
+def test_frame_income(income_df: DataFrame, final_dict: dict) -> None:
     result = get_frame_income(income_df)
     assert result == final_dict
 
@@ -267,7 +265,7 @@ def test_stock_http_error(get_date_time_obj: datetime.datetime, get_stock_string
         ("09.03.2019", "W", ("09.03.2019", "W")),
     ],
 )
-def test_filter_user_choice(chosen_date, chosen_range, expected_tuple):
+def test_filter_user_choice(chosen_date: str, chosen_range: str, expected_tuple: tuple) -> None:
     with patch("builtins.input") as mock_input:
         mock_input.side_effect = [chosen_date, chosen_range]
         result = filter_user_choice()
