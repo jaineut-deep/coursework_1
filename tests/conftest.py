@@ -1,9 +1,13 @@
 import datetime
+import json
 import os
+import pandas as pd
 import pytest
+from pandas import DataFrame
 
 trans_data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
-refined_data_path = os.path.dirname(os.path.dirname(__file__)) + "/refined.xlsx"
+refined_data_path = os.path.dirname(os.path.dirname(__file__)) + "/buffer_data/refined.xlsx"
+agg_private_transfer_path = os.path.dirname(os.path.dirname(__file__)) + "/materials_testing/agg_private_transfer.json"
 
 
 @pytest.fixture
@@ -19,6 +23,11 @@ def get_month_range() -> str:
 @pytest.fixture
 def get_data_string_july() -> str:
     return "09.07.2019"
+
+
+@pytest.fixture
+def get_early_date() -> str:
+    return "31.03.2018"
 
 
 @pytest.fixture
@@ -49,3 +58,97 @@ def get_stock_string() -> str:
 @pytest.fixture
 def get_date_time_obj() -> datetime.datetime:
     return datetime.datetime(2019, 9, 11)
+
+
+@pytest.fixture
+def get_trial_df() -> DataFrame:
+    trial_df = pd.read_excel(refined_data_path)
+    return trial_df.tail(600)
+
+
+@pytest.fixture
+def get_output_agg_json() -> str:
+    output_json = (
+        "{\n"
+        '    "expenses": {\n'
+        '        "total_amount": 1080,\n'
+        '        "main": [\n'
+        "            {\n"
+        '                "category": "Супермаркеты",\n'
+        '                "amount": 385\n'
+        "            },\n"
+        "            {\n"
+        '                "category": "Фастфуд",\n'
+        '                "amount": 384\n'
+        "            },\n"
+        "            {\n"
+        '                "category": "Транспорт",\n'
+        '                "amount": 227\n'
+        "            },\n"
+        "            {\n"
+        '                "category": "Образование",\n'
+        '                "amount": 84\n'
+        "            },\n"
+        "            {\n"
+        '                "category": "Остальное",\n'
+        '                "amount": 0\n'
+        "            }\n"
+        "        ],\n"
+        '        "transfers_and_cash": [\n'
+        "            {\n"
+        '                "category": "Переводы",\n'
+        '                "amount": 0\n'
+        "            },\n"
+        "            {\n"
+        '                "category": "Наличные",\n'
+        '                "amount": 0\n'
+        "            }\n"
+        "        ]\n"
+        "    },\n"
+        '    "income": {\n'
+        '        "total_amount": 0,\n'
+        '        "main": []\n'
+        "    },\n"
+        '    "currency_rates": [\n'
+        "        {\n"
+        '            "currency": "USD",\n'
+        '            "rate": 63.65\n'
+        "        },\n"
+        "        {\n"
+        '            "currency": "EUR",\n'
+        '            "rate": 71.6\n'
+        "        }\n"
+        "    ],\n"
+        '    "stock_prices": [\n'
+        "        {\n"
+        '            "stock": "AAPL",\n'
+        '            "price": 50.31\n'
+        "        },\n"
+        "        {\n"
+        '            "stock": "AMZN",\n'
+        '            "price": 99.42\n'
+        "        },\n"
+        "        {\n"
+        '            "stock": "GOOGL",\n'
+        '            "price": 56.21\n'
+        "        },\n"
+        "        {\n"
+        '            "stock": "MSFT",\n'
+        '            "price": 136.46\n'
+        "        },\n"
+        "        {\n"
+        '            "stock": "TSLA",\n'
+        '            "price": 15.34\n'
+        "        }\n"
+        "    ]\n"
+        "}"
+    )
+    return output_json
+
+
+@pytest.fixture
+def get_private_trans_json() -> str:
+    with open(agg_private_transfer_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+    json_data = json.dumps(data, ensure_ascii=False, indent=4)
+    return json_data
