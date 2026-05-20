@@ -74,7 +74,7 @@ def get_frame_operations() -> DataFrame:
         if (indexed_df.loc[idx, "Валюта_операции"] != "RUB") & (indexed_df.loc[idx, "Валюта_платежа"] != "RUB"):
             date_obj = indexed_df["Дата_операции"].iloc[idx].to_pydatetime()
             rate = Decimal(get_currency_rate(date_obj, str(indexed_df.loc[idx, "Валюта_операции"])))
-            indexed_df["Итого"].iloc[idx] = (
+            indexed_df["Итого"].iloc[idx] = (   # type: ignore
                 rate * Decimal(str(indexed_df.loc[idx, "Сумма_операции"]))
             ).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
 
@@ -383,7 +383,3 @@ def quantize_decimal(x: Any) -> Decimal:
     """
 
     return Decimal(str(x)).quantize(Decimal("0.00"))
-
-
-if __name__ == "__main__":
-    print(filter_choice_spending_workday())
