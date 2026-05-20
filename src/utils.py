@@ -8,10 +8,12 @@ from requests.exceptions import ConnectionError, Timeout, HTTPError
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from dotenv import load_dotenv
 from pandas import DataFrame
+from typing import Any, Union
 
 past_currency = os.path.dirname(os.path.dirname(__file__)) + "/safe_currency.json"
 user_settings_path = os.path.dirname(os.path.dirname(__file__)) + "/user_settings.json"
 data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
+file_write_path = os.path.dirname(os.path.dirname(__file__)) + "/buffer_data/refined.xlsx"
 
 
 def get_frame_operations() -> DataFrame:
@@ -33,21 +35,23 @@ def get_frame_operations() -> DataFrame:
     for idx in range(len(indexed_executed_df) - 2):
         if (
             (indexed_executed_df.iloc[idx, 1] != indexed_executed_df.iloc[(idx + 1), 1])
-            and (abs(indexed_executed_df.iloc[idx, 1]) == abs(indexed_executed_df.iloc[(idx + 1), 1]))
+            and (abs(indexed_executed_df["Сумма_операции"].astype(float).iloc[idx]) ==
+                 abs(indexed_executed_df["Сумма_операции"].astype(float).iloc[idx + 1]))
             and (indexed_executed_df.iloc[idx, 7] == indexed_executed_df.iloc[(idx + 1), 7])
         ):
             inner_transfer_index_list.extend([idx, (idx + 1)])
     charge_payment_df = indexed_executed_df.loc[~(indexed_executed_df.index.isin(inner_transfer_index_list))]
     indexed_df = charge_payment_df.reset_index(drop=True)
-    indexed_df["Сумма_операции"] = indexed_df["Сумма_операции"].transform(
-        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
-    )
-    indexed_df["Сумма_платежа"] = indexed_df["Сумма_платежа"].transform(
-        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
-    )
-    indexed_df["Сумма_операции_с_округлением"] = indexed_df["Сумма_операции_с_округлением"].transform(
-        lambda x: Decimal(str(x)).quantize(Decimal("0.00"))  # type: ignore
-    )
+    indexed_df["Сумма_операции"] = indexed_df["Сумма_операции"].astype(str).transform(quantize_decimal)
+    #     lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
+    # )
+    indexed_df["Сумма_платежа"] = indexed_df["Сумма_платежа"].astype(str).transform(quantize_decimal)
+    #     lambda x: Decimal(str(x)).quantize(Decimal("0.00"))   # type: ignore
+    # )
+    indexed_df["Сумма_операции_с_округлением"] = indexed_df["Сумма_операции_с_округлением"].astype(str).transform(
+        quantize_decimal)
+    #     lambda x: Decimal(str(x)).quantize(Decimal("0.00"))  # type: ignore
+    # )
     mask_currency_ruble = (indexed_df["Валюта_операции"] != "RUB") & (indexed_df["Валюта_платежа"] == "RUB")
     mask_ruble_currency = (indexed_df["Валюта_операции"] == "RUB") & (indexed_df["Валюта_платежа"] != "RUB")
     mask_ruble_positive = (
@@ -70,9 +74,11 @@ def get_frame_operations() -> DataFrame:
         if (indexed_df.loc[idx, "Валюта_операции"] != "RUB") & (indexed_df.loc[idx, "Валюта_платежа"] != "RUB"):
             date_obj = indexed_df["Дата_операции"].iloc[idx].to_pydatetime()
             rate = Decimal(get_currency_rate(date_obj, str(indexed_df.loc[idx, "Валюта_операции"])))
-            indexed_df.loc[idx, "Итого"] = (   # type: ignore
+            indexed_df["Итого"].iloc[idx] = (
                 rate * Decimal(str(indexed_df.loc[idx, "Сумма_операции"]))
             ).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+
+    indexed_df.to_excel(excel_writer=file_write_path, index=False)
     return indexed_df
 
 
@@ -82,19 +88,23 @@ def get_span_operations(spec_date: str, spec_range: str) -> DataFrame:
     указанный диапазон дат.
     """
 
-    primary_df = get_frame_operations()
+    primary_df = pd.read_excel(file_write_path) if (os.path.isfile(file_write_path) and
+                                                         (os.path.splitext(file_write_path)[1].lower() == '.xlsx'))\
+        else get_frame_operations()
+    primary_df["Итого"] = primary_df["Итого"].astype(str).transform(quantize_decimal)
+
     spec_date_obj = datetime.datetime.strptime(spec_date, "%d.%m.%Y")
-    spec_date_format = spec_date_obj.replace(spec_date_obj.year, spec_date_obj.month, spec_date_obj.day)
-    spec_date_full = spec_date_format.replace(hour=23, minute=59, second=59)
+    spec_date_full = spec_date_obj.replace(hour=23, minute=59, second=59)
     days_kit = {
-        "W": (spec_date_format - datetime.timedelta(days=(spec_date_format.isoweekday() - 1))),
-        "M": spec_date_format.replace(spec_date_format.year, spec_date_format.month, 1),
-        "Y": spec_date_format.replace(spec_date_format.year, 1, 1),
+        "W": (spec_date_obj - datetime.timedelta(days=(spec_date_obj.isoweekday() - 1))),
+        "M": spec_date_obj.replace(spec_date_obj.year, spec_date_obj.month, 1),
+        "Y": spec_date_obj.replace(spec_date_obj.year, 1, 1),
         "ALL": primary_df["Дата_операции"].tail(1).iloc[0].to_pydatetime(),
     }
     date_border = days_kit[spec_range]
-    at_date_df = primary_df.loc[primary_df["Дата_операции"] <= spec_date_full]
-    return at_date_df.loc[at_date_df["Дата_операции"] >= pd.Timestamp(date_border)]
+    at_dates_df = primary_df[(primary_df["Дата_операции"] <= pd.Timestamp(spec_date_full)) &
+                             (pd.Timestamp(date_border) <= primary_df["Дата_операции"])]
+    return at_dates_df
 
 
 def get_frame_expenses(operations_df: DataFrame) -> dict:
@@ -279,7 +289,7 @@ def get_stock_price(indicated_date: datetime.datetime, indicated_stock: str) -> 
 
 def filter_user_choice() -> tuple[str, str]:
     """
-    Функция возвращает кортеж строк: дату и обозначение диапазона дат.
+    Функция возвращает кортеж строк: пользовательские дату и обозначение диапазона дат.
     """
 
     while True:
@@ -288,28 +298,92 @@ def filter_user_choice() -> tuple[str, str]:
         print(
             """
         Выберите диапазон дат:
-        W -- данные за текущую неделю
-        M -- данные за текущий месяц
-        Y -- данные за текущий год
-        ALL -- данные за всё время
+        W -- данные за неделю на которую приходится дата
+        M -- данные за месяц на который приходится дата
+        Y -- данные за год на который приходится дата
+        ALL -- данные за всё время до указанной даты
         """
         )
         user_range = input()
-        term_dates = ()
+        term_dates = ("", "")
+        right_edge_date = datetime.datetime(2021, 12, 31)
+        left_edge_date = datetime.datetime(2018, 1, 1)
         try:
-            datetime.datetime.strptime(user_date, "%d.%m.%Y")
-
+            trial_date = datetime.datetime.strptime(user_date, "%d.%m.%Y")
+            if not trial_date:
+                raise ValueError
+            if (right_edge_date < trial_date) or (trial_date < left_edge_date):
+                raise IndexError
             if (datetime.datetime.strptime(user_date, "%d.%m.%Y") and
                     (user_range.upper() in ["W", "M", "Y", "ALL"])):
                 term_dates = (user_date, user_range.upper())
                 break
+            else:
+                raise IndexError
         except ValueError:
-            print("Указанной даты не существует")
-        more_input = input(f"Неверный формат введенных данных\nПопробуете снова? Y/N\n")
-        if more_input.upper() == "N":
-            sys.exit(0)
-        elif more_input.upper() == "Y":
-            continue
-        else:
-            continue
+            print("Указанная дата не существует или неверный формат даты")
+            if input(f"Попробуете снова? Y/N\n").upper() == "N":
+                sys.exit(0)
+            else:
+                continue
+        except IndexError:
+            print("Указанная дата недоступна или не выбран диапазон дат")
+            if input(f"Попробуете снова? Y/N\n").upper() == "N":
+                sys.exit(0)
+            else:
+                continue
     return term_dates
+
+
+def filter_choice_spending_workday() -> list[Union[DataFrame, None, str]]:
+    """
+    Функция возвращает список содержащий Dataframe и пользовательский ввод даты в виде строки.
+    """
+
+    while True:
+        print(f"Введите дату вида 'dd.mm.YYYY':\n")
+        user_date = input()
+        if user_date == "":
+            break
+        right_edge_date = datetime.datetime(2021, 12, 31)
+        left_edge_date = datetime.datetime(2018, 3, 31)
+        try:
+            trial_date = datetime.datetime.strptime(user_date, "%d.%m.%Y")
+            if not trial_date:
+                raise ValueError
+            if (right_edge_date < trial_date) or (trial_date < left_edge_date):
+                raise IndexError
+
+            if trial_date:
+                break
+        except ValueError:
+            print("Указанной даты не существует или неверный формат даты")
+            if input(f"Попробуете снова? Y/N\n").upper() == "N":
+                sys.exit(0)
+            else:
+                continue
+        except IndexError:
+            print("Указанная дата недоступна")
+            if input(f"Попробуете снова? Y/N\n").upper() == "N":
+                sys.exit(0)
+            else:
+                continue
+    operations_df = pd.read_excel(file_write_path) if (os.path.isfile(file_write_path) and
+                                                         (os.path.splitext(file_write_path)[1].lower() == '.xlsx'))\
+        else get_frame_operations()
+    if user_date == "":
+        return [operations_df, None]
+    else:
+        return [operations_df, user_date]
+
+
+def quantize_decimal(x: Any) -> Decimal:
+    """
+    Функция принимает подготовленное значение с любым типом данных и возвращает число типа Decimal.
+    """
+
+    return Decimal(str(x)).quantize(Decimal("0.00"))
+
+
+if __name__ == "__main__":
+    print(filter_choice_spending_workday())
