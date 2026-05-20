@@ -33,6 +33,8 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     only_day_df["Итого"] = only_day_df["Итого"].apply(lambda x: abs(x))
 
     grouped_df = only_day_df.groupby(["Дата_операций", "День_недели"]).agg({"Итого": "mean"})
+    grouped_df.reset_index(level=[0, 1], drop=False, inplace=True)
+    grouped_df["Итого"] = grouped_df["Итого"].astype(str).transform(quantize_decimal)
 
     return grouped_df
 
