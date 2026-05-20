@@ -1,10 +1,25 @@
+import os
 import datetime
 import pandas as pd
 from pandas import DataFrame
-from src.utils import file_write_path, quantize_decimal
+from src.utils import quantize_decimal
 from typing import Optional
 
+report_dir = os.path.dirname(os.path.dirname(__file__))
 
+
+def writing_to_file(function):
+    def inner(*args, **kwargs):
+        result = function(*args, **kwargs)
+        print("Записываю отчёт в output_data/ ...")
+        result.to_excel(excel_writer=f"{report_dir}/output_data/{function.__name__}.xlsx", index=False,
+                        float_format="%.2f", engine="openpyxl")
+        print("Отчёт создан")
+        return result
+    return inner
+
+
+@writing_to_file
 def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) -> DataFrame:
     """
      Функция принимает транзакции в виде DataFrame и опциональную дату в виде строки, а возвращает данные по средним
@@ -35,9 +50,6 @@ def spending_by_workday(transactions: pd.DataFrame, date: Optional[str] = None) 
     grouped_df = only_day_df.groupby(["Дата_операций", "День_недели"]).agg({"Итого": "mean"})
     grouped_df.reset_index(level=[0, 1], drop=False, inplace=True)
     grouped_df["Итого"] = grouped_df["Итого"].astype(str).transform(quantize_decimal)
+    grouped_df["Дата_операций"] = grouped_df["Дата_операций"].astype(str)
 
     return grouped_df
-
-
-if __name__ == "__main__":
-    print(spending_by_workday(pd.read_excel(file_write_path)))
