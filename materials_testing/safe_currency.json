@@ -1,0 +1,61 @@
+{
+    "meta": {
+        "symbol": "CNY/RUB",
+        "interval": "1day",
+        "currency_base": "Chinese Yuan",
+        "currency_quote": "Russian Ruble",
+        "type": "Physical Currency"
+    },
+    "values": [
+        {
+            "datetime": "2019-09-25",
+            "open": "8.99",
+            "high": "9.04",
+            "low": "8.98",
+            "close": "9.00"
+        },
+        {
+            "datetime": "2019-09-24",
+            "open": "8.97",
+            "high": "8.99",
+            "low": "8.95",
+            "close": "8.99"
+        },
+        {
+            "datetime": "2019-09-23",
+            "open": "9.03",
+            "high": "9.03",
+            "low": "8.96",
+            "close": "8.97"
+        },
+        {
+            "datetime": "2019-09-22",
+            "open": "9.03",
+            "high": "9.03",
+            "low": "9.03",
+            "close": "9.03"
+        },
+        {
+            "datetime": "2019-04-28",
+            "open": "9.62",
+            "high": "9.62",
+            "low": "9.62",
+            "close": "9.62"
+        },
+        {
+            "datetime": "2019-04-26",
+            "open": "9.59",
+            "high": "9.64",
+            "low": "9.59",
+            "close": "9.62"
+        },
+        {
+            "datetime": "2019-04-25",
+            "open": "9.57",
+            "high": "9.63",
+            "low": "9.55",
+            "close": "9.59"
+        }
+    ],
+    "status": "ok"
+}
