@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from pandas import DataFrame
 from typing import Any, Union
 
-past_currency = os.path.dirname(os.path.dirname(__file__)) + "/safe_currency.json"
+past_currency = os.path.dirname(os.path.dirname(__file__)) + "/materials_testing/safe_currency.json"
 user_settings_path = os.path.dirname(os.path.dirname(__file__)) + "/user_settings.json"
 data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
 file_write_path = os.path.dirname(os.path.dirname(__file__)) + "/buffer_data/refined.xlsx"
