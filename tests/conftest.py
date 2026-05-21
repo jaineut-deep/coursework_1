@@ -3,11 +3,23 @@ import json
 import os
 import pandas as pd
 import pytest
+from decimal import Decimal
 from pandas import DataFrame
 
 trans_data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
 refined_data_path = os.path.dirname(os.path.dirname(__file__)) + "/buffer_data/refined.xlsx"
 agg_private_transfer_path = os.path.dirname(os.path.dirname(__file__)) + "/materials_testing/agg_private_transfer.json"
+safe_currency_path = os.path.dirname(os.path.dirname(__file__)) + "/materials_testing/safe_currency.json"
+
+
+@pytest.fixture
+def get_empty_input() -> str:
+    return ""
+
+
+@pytest.fixture
+def get_no_answer() -> str:
+    return "N"
 
 
 @pytest.fixture
@@ -31,6 +43,37 @@ def get_early_date() -> str:
 
 
 @pytest.fixture
+def get_non_format_date() -> str:
+    return "20/08/2020"
+
+
+@pytest.fixture
+def get_feb_wrong_day() -> str:
+    return "29.02.2018"
+
+
+@pytest.fixture
+def get_outside_range_date() -> str:
+    return "01.01.2025"
+
+
+@pytest.fixture
+def get_none_input_list() -> list:
+    prepare_rub_df = pd.read_excel(refined_data_path)
+    return [prepare_rub_df, None]
+
+
+@pytest.fixture
+def get_float_number() -> float:
+    return 3.7567
+
+
+@pytest.fixture
+def get_decimal_quantized() -> Decimal:
+    return Decimal('3.76')
+
+
+@pytest.fixture
 def get_stock_curr_dict() -> dict:
     curr_stock_prices = {
         "currency_rates": [{"currency": "USD", "rate": 63.65}, {"currency": "EUR", "rate": 71.6}],
@@ -46,6 +89,11 @@ def get_stock_curr_dict() -> dict:
 
 
 @pytest.fixture
+def get_cny_currency_str() -> str:
+    return "CNY"
+
+
+@pytest.fixture
 def get_currency_string() -> str:
     return "EUR"
 
@@ -58,6 +106,16 @@ def get_stock_string() -> str:
 @pytest.fixture
 def get_date_time_obj() -> datetime.datetime:
     return datetime.datetime(2019, 9, 11)
+
+
+@pytest.fixture
+def get_date_april_obj() -> datetime.datetime:
+    return datetime.datetime(2019, 4, 24)
+
+
+@pytest.fixture
+def get_date_april_ready() -> datetime.datetime:
+    return datetime.datetime(2019, 4, 26)
 
 
 @pytest.fixture
