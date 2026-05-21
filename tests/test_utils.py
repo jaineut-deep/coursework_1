@@ -11,7 +11,7 @@ from pytest import CaptureFixture
 from unittest.mock import patch
 from src.utils import (get_frame_expenses, get_frame_income, get_currency_stock_prices, get_currency_rate,
                        get_stock_price, filter_user_choice, file_write_path, filter_choice_spending_workday,
-                       quantize_decimal)
+                       quantize_decimal, get_choice_menu)
 
 
 def get_year_df() -> DataFrame:
@@ -366,6 +366,28 @@ def test_unreachable_input_choice_workday(capsys: CaptureFixture[str], get_outsi
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
     assert "Введите дату вида 'dd.mm.YYYY':\n"'\n''Указанная дата недоступна\n' in captured.out
+
+
+@pytest.mark.parametrize(
+    "chosen_num, output_num",
+    [
+        ("1", "1"),
+        ("2", "2"),
+        ("3", "3"),
+    ],
+)
+def test_user_choice_menu(chosen_num: str, output_num: str) -> None:
+    with patch("builtins.input") as mock_input:
+        mock_input.return_value = chosen_num
+        result = get_choice_menu()
+        expected = output_num
+
+        assert mock_input.call_count == 1
+
+        first_call = mock_input.call_args_list[0]
+        args, kwargs = first_call
+        assert args == ()
+        assert result == expected
 
 
 def test_get_quantize_decimal(get_float_number: float, get_decimal_quantized: Decimal) -> None:
