@@ -3,11 +3,15 @@ import os
 import pandas as pd
 import pytest
 import requests
+from decimal import Decimal
 from dotenv import load_dotenv
 from pandas import DataFrame
+from pandas.testing import assert_frame_equal
+from pytest import CaptureFixture
 from unittest.mock import patch
 from src.utils import (get_frame_expenses, get_frame_income, get_currency_stock_prices, get_currency_rate,
-                       get_stock_price, filter_user_choice, file_write_path)
+                       get_stock_price, filter_user_choice, file_write_path, filter_choice_spending_workday,
+                       quantize_decimal)
 
 
 def get_year_df() -> DataFrame:
@@ -203,6 +207,22 @@ def test_get_http_error(get_date_time_obj: datetime.datetime, get_currency_strin
         )
 
 
+@pytest.mark.parametrize(
+    "target_date, target_currency, mock_value",
+    [
+        (datetime.datetime(2019, 4, 25), "CNY", {"values": [{"close": "9.59"}]}),
+        (datetime.datetime(2019, 4, 26), "CNY", {"values": [{"close": "9.62"}]}),
+    ]
+)
+def test_get_cny_currency(target_date: datetime.datetime, target_currency: str, mock_value: dict) -> None:
+    with patch("src.utils.json.load") as mock_json_load:
+        mock_json_load.return_value = mock_value
+
+        result = get_currency_rate(target_date, target_currency)
+        mock_json_load.assert_called_once()
+        assert result == mock_value["values"][0]["close"]
+
+
 def test_stock_connection_error(get_date_time_obj: datetime.datetime, get_stock_string: str) -> None:
     load_dotenv()
     stated_date_obj = get_date_time_obj.date()
@@ -281,3 +301,74 @@ def test_filter_user_choice(chosen_date: str, chosen_range: str, expected_tuple:
         args, kwargs = second_call
         assert args == ()
         assert result == expected
+
+
+@pytest.mark.usefixtures("capsys")
+def test_invalid_input_date(capsys: CaptureFixture[str], get_non_format_date: str, get_month_range: str,
+                            get_no_answer: str) -> None:
+    inputs = [get_non_format_date, get_month_range, get_no_answer]
+
+    with patch('builtins.input', side_effect=inputs):
+        with pytest.raises(SystemExit) as exc_info:
+            filter_user_choice()
+
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "Указанная дата не существует или неверный формат даты" in captured.out
+
+
+@pytest.mark.usefixtures("capsys")
+def test_outrange_input_date(capsys: CaptureFixture[str], get_outside_range_date: str, get_week_range: str,
+                            get_no_answer: str) -> None:
+    inputs = [get_outside_range_date, get_week_range, get_no_answer]
+
+    with patch('builtins.input', side_effect=inputs):
+        with pytest.raises(SystemExit) as exc_info:
+            filter_user_choice()
+
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "Указанная дата недоступна или не выбран диапазон дат" in captured.out
+
+
+def test_filter_spending_workday(get_empty_input: str, get_none_input_list: list) -> None:
+    user_input = ""
+    with patch('builtins.input', return_value=user_input):
+        result = filter_choice_spending_workday()
+
+    expected = get_none_input_list[0]
+    assert_frame_equal(result[0], expected)
+
+
+@pytest.mark.usefixtures("capsys")
+def test_invalid_input_choice_workday(capsys: CaptureFixture[str], get_non_format_date: str,
+                                      get_no_answer: str) -> None:
+    inputs = [get_non_format_date, get_no_answer]
+
+    with patch('builtins.input', side_effect=inputs):
+        with pytest.raises(SystemExit) as exc_info:
+            filter_choice_spending_workday()
+
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "Введите дату вида 'dd.mm.YYYY':\n"'\n''Указанной даты не существует или неверный формат даты\n' in captured.out
+
+
+@pytest.mark.usefixtures("capsys")
+def test_unreachable_input_choice_workday(capsys: CaptureFixture[str], get_outside_range_date: str,
+                                      get_no_answer: str) -> None:
+    inputs = [get_outside_range_date, get_no_answer]
+
+    with patch('builtins.input', side_effect=inputs):
+        with pytest.raises(SystemExit) as exc_info:
+            filter_choice_spending_workday()
+
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "Введите дату вида 'dd.mm.YYYY':\n"'\n''Указанная дата недоступна\n' in captured.out
+
+
+def test_get_quantize_decimal(get_float_number: float, get_decimal_quantized: Decimal) -> None:
+    result = quantize_decimal(get_float_number)
+
+    assert result == get_decimal_quantized
