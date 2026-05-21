@@ -78,7 +78,6 @@ def get_frame_operations() -> DataFrame:
                 rate * Decimal(str(indexed_df.loc[idx, "Сумма_операции"]))
             ).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
 
-    indexed_df.to_excel(excel_writer=file_write_path, index=False)
     return indexed_df
 
 
@@ -375,6 +374,41 @@ def filter_choice_spending_workday() -> list[Union[DataFrame, None, str]]:
         return [operations_df, None]
     else:
         return [operations_df, user_date]
+
+
+def get_choice_menu() -> str:
+    """
+    Функция возвращает ввод пользователя в виде строки.
+    """
+
+    greeting = """
+            Привет! В этом разделе можно управлять статистикой и
+            формировать отчёты о транзакциях"""
+    print(greeting)
+
+    while True:
+        print(
+            """
+            Выберите необходимый пункт меню:
+
+            1. Общая статистика по транзакциям за определённый период
+
+            2. Сервисы по категориям
+
+            3. Отчеты по расходам/пополнениям
+
+            0. Выход
+            """
+        )
+
+        user_choice = input()
+        if not user_choice.isdigit():
+            print(f"Статус выбора {user_choice} недоступен.")
+            continue
+        elif int(user_choice) in [1, 2, 3, 0]:
+            break
+
+    return user_choice
 
 
 def quantize_decimal(x: Any) -> Decimal:
