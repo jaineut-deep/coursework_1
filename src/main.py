@@ -5,8 +5,13 @@ from pandas import DataFrame
 
 from src.reports import spending_by_workday
 from src.services import aggregate_private_transfer
-from src.utils import (file_write_path, filter_choice_spending_workday, filter_user_choice, get_choice_menu,
-                       get_frame_operations)
+from src.utils import (
+    file_write_path,
+    filter_choice_spending_workday,
+    filter_user_choice,
+    get_choice_menu,
+    get_frame_operations,
+)
 from src.views import aggregate_json
 
 
@@ -38,3 +43,7 @@ def main() -> str | None | DataFrame:
         data_for_bye = ["Выбрано <<Выход>>. Завершение...", ""]
         print(data_for_bye[0])
         sys.exit(0)
+
+
+if __name__ == "__main__":
+    print(main())

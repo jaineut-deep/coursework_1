@@ -11,9 +11,18 @@ from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from pytest import CaptureFixture
 
-from src.utils import (file_write_path, filter_choice_spending_workday, filter_user_choice, get_choice_menu,
-                       get_currency_rate, get_currency_stock_prices, get_frame_expenses, get_frame_income,
-                       get_stock_price, quantize_decimal)
+from src.utils import (
+    file_write_path,
+    filter_choice_spending_workday,
+    filter_user_choice,
+    get_choice_menu,
+    get_currency_rate,
+    get_currency_stock_prices,
+    get_frame_expenses,
+    get_frame_income,
+    get_stock_price,
+    quantize_decimal,
+)
 
 
 def get_year_df() -> DataFrame:
@@ -53,20 +62,20 @@ def test_span_operations(mock_data: DataFrame, chosen_date: str, chosen_range: s
         (
             get_year_df(),
             {
-                "total_amount": 1574796,
+                "total_amount": 1574392,
                 "main": [
                     {"category": "Образование", "amount": 309557},
                     {"category": "Другое", "amount": 90205},
                     {"category": "Супермаркеты", "amount": 84307},
                     {"category": "Дом и ремонт", "amount": 83470},
-                    {"category": "Различные товары", "amount": 57034},
+                    {"category": "Различные товары", "amount": 57036},
                     {"category": "Фастфуд", "amount": 50161},
                     {"category": "Ж/д билеты", "amount": 45017},
-                    {"category": "Остальное", "amount": 155158},
+                    {"category": "Остальное", "amount": 154753},
                 ],
                 "transfers_and_cash": [
                     {"category": "Переводы", "amount": 400702},
-                    {"category": "Наличные", "amount": 299186},
+                    {"category": "Наличные", "amount": 299183},
                 ],
             },
         ),
@@ -213,8 +222,8 @@ def test_get_http_error(get_date_time_obj: datetime.datetime, get_currency_strin
 @pytest.mark.parametrize(
     "target_date, target_currency, mock_value",
     [
-        (datetime.datetime(2019, 4, 25), "CNY", {"values": [{"close": "9.59"}]}),
-        (datetime.datetime(2019, 4, 26), "CNY", {"values": [{"close": "9.62"}]}),
+        (datetime.datetime(2019, 4, 25), "CNY", {"values": [{"datetime": "2019-04-25", "close": "9.59"}]}),
+        (datetime.datetime(2019, 4, 26), "CNY", {"values": [{"datetime": "2019-04-26", "close": "9.62"}]}),
     ],
 )
 def test_get_cny_currency(target_date: datetime.datetime, target_currency: str, mock_value: dict) -> None:
@@ -284,9 +293,9 @@ def test_stock_http_error(get_date_time_obj: datetime.datetime, get_stock_string
 @pytest.mark.parametrize(
     "chosen_date, chosen_range, expected_tuple",
     [
-        ("29.12.2019", "Y", ("29.12.2019", "Y")),
-        ("16.07.2019", "M", ("16.07.2019", "M")),
-        ("09.03.2019", "W", ("09.03.2019", "W")),
+        ("29.12.2019", "Y", ["29.12.2019", "Y"]),
+        ("16.07.2019", "M", ["16.07.2019", "M"]),
+        ("09.03.2019", "W", ["09.03.2019", "W"]),
     ],
 )
 def test_filter_user_choice(chosen_date: str, chosen_range: str, expected_tuple: tuple) -> None:
@@ -359,7 +368,7 @@ def test_invalid_input_choice_workday(
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
     assert (
-        "Введите дату вида 'dd.mm.YYYY':\n"
+        "Введите дату вида 'dd.mm.YYYY' или пропустите для установления даты по умолчанию:\n"
         "\n"
         "Указанной даты не существует или неверный формат даты\n" in captured.out
     )
@@ -377,7 +386,11 @@ def test_unreachable_input_choice_workday(
 
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "Введите дату вида 'dd.mm.YYYY':\n" "\n" "Указанная дата недоступна\n" in captured.out
+    assert (
+        "Введите дату вида 'dd.mm.YYYY' или пропустите для установления даты по умолчанию:\n"
+        "\n"
+        "Указанная дата недоступна\n" in captured.out
+    )
 
 
 @pytest.mark.parametrize(
