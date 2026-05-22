@@ -1,9 +1,10 @@
 import datetime
 import json
 import os
+from decimal import Decimal
+
 import pandas as pd
 import pytest
-from decimal import Decimal
 from pandas import DataFrame
 
 trans_data_path = os.path.dirname(os.path.dirname(__file__)) + "/data/operations.xlsx"
@@ -70,7 +71,7 @@ def get_float_number() -> float:
 
 @pytest.fixture
 def get_decimal_quantized() -> Decimal:
-    return Decimal('3.76')
+    return Decimal("3.76")
 
 
 @pytest.fixture
