@@ -1,10 +1,9 @@
 import pandas as pd
 from pandas import DataFrame
 from pytest import CaptureFixture
-from src.reports import writing_to_file, spending_by_workday, report_dir
-from src.utils import file_write_path
 
-from tests.conftest import get_trial_df, get_early_date
+from src.reports import spending_by_workday, writing_to_file
+from src.utils import base_dir, file_write_path
 
 
 def test_write_report(capsys: CaptureFixture[str]) -> None:
@@ -15,10 +14,10 @@ def test_write_report(capsys: CaptureFixture[str]) -> None:
 
     result = get_small_df()
     captured = capsys.readouterr()
-    assert captured.out == f"Записываю отчёт в output_data/ ...\nОтчёт создан\n"
-    assert type(result) == pd.DataFrame
+    assert captured.out == "Записываю отчёт в output_data/ ...\nОтчёт создан\n"
+    assert isinstance(result, pd.DataFrame)
 
-    report_file_df = pd.read_excel(f"{report_dir}/output_data/get_small_df.xlsx")
+    report_file_df = pd.read_excel(f"{base_dir}/output_data/get_small_df.xlsx")
     assert report_file_df.shape == (25, 3)
 
 
