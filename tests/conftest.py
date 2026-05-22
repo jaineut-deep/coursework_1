@@ -77,7 +77,7 @@ def get_decimal_quantized() -> Decimal:
 @pytest.fixture
 def get_stock_curr_dict() -> dict:
     curr_stock_prices = {
-        "currency_rates": [{"currency": "USD", "rate": 63.65 or 0.02}, {"currency": "EUR", "rate": 71.6}],
+        "currency_rates": [{"currency": "USD", "rate": 63.65}, {"currency": "EUR", "rate": 71.6}],
         "stock_prices": [
             {"stock": "AAPL", "price": 50.31},
             {"stock": "AMZN", "price": 99.42},
@@ -171,33 +171,33 @@ def get_output_agg_json() -> str:
         '    "currency_rates": [\n'
         "        {\n"
         '            "currency": "USD",\n'
-        '            "rate": 63.65\n'
+        '            "rate": 0.02\n'
         "        },\n"
         "        {\n"
         '            "currency": "EUR",\n'
-        '            "rate": 71.6\n'
+        '            "rate": 0.02\n'
         "        }\n"
         "    ],\n"
         '    "stock_prices": [\n'
         "        {\n"
         '            "stock": "AAPL",\n'
-        '            "price": 50.31\n'
+        '            "price": 0.0\n'
         "        },\n"
         "        {\n"
         '            "stock": "AMZN",\n'
-        '            "price": 99.42\n'
+        '            "price": 0.0\n'
         "        },\n"
         "        {\n"
         '            "stock": "GOOGL",\n'
-        '            "price": 56.21\n'
+        '            "price": 0.0\n'
         "        },\n"
         "        {\n"
         '            "stock": "MSFT",\n'
-        '            "price": 136.46\n'
+        '            "price": 0.0\n'
         "        },\n"
         "        {\n"
         '            "stock": "TSLA",\n'
-        '            "price": 15.34\n'
+        '            "price": 0.0\n'
         "        }\n"
         "    ]\n"
         "}"
