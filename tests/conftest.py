@@ -77,7 +77,7 @@ def get_decimal_quantized() -> Decimal:
 @pytest.fixture
 def get_stock_curr_dict() -> dict:
     curr_stock_prices = {
-        "currency_rates": [{"currency": "USD", "rate": 63.65}, {"currency": "EUR", "rate": 71.6}],
+        "currency_rates": [{"currency": "USD", "rate": 63.65 or 0.02}, {"currency": "EUR", "rate": 71.6}],
         "stock_prices": [
             {"stock": "AAPL", "price": 50.31},
             {"stock": "AMZN", "price": 99.42},
