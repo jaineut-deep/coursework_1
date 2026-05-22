@@ -1,0 +1,156 @@
+2026-05-22 18:49:09,482 - utils - INFO - Начало работы <get_span_operations> по нахождению транзакций определенного периода
+2026-05-22 18:49:12,607 - utils - INFO - Задание границ периода дат транзакций
+2026-05-22 18:49:12,611 - utils - INFO - Датафрейм за определенный период сформирован
+2026-05-22 18:49:12,611 - utils - INFO - <get_span_operations> закончила свою работу
+2026-05-22 18:49:12,623 - utils - INFO - Начало работы <get_span_operations> по нахождению транзакций определенного периода
+2026-05-22 18:49:15,699 - utils - INFO - Задание границ периода дат транзакций
+2026-05-22 18:49:15,702 - utils - INFO - Датафрейм за определенный период сформирован
+2026-05-22 18:49:15,702 - utils - INFO - <get_span_operations> закончила свою работу
+2026-05-22 18:49:15,711 - utils - INFO - Начало работы <get_span_operations> по нахождению транзакций определенного периода
+2026-05-22 18:49:18,845 - utils - INFO - Задание границ периода дат транзакций
+2026-05-22 18:49:18,848 - utils - INFO - Датафрейм за определенный период сформирован
+2026-05-22 18:49:18,848 - utils - INFO - <get_span_operations> закончила свою работу
+2026-05-22 18:49:18,856 - utils - INFO - Начало работы <get_frame_expenses> для формирования статистики о тратах
+2026-05-22 18:49:18,874 - utils - INFO - Создана сводная таблица с видами трат за отдельный период
+2026-05-22 18:49:18,877 - utils - INFO - Округление значений по категориям до двух знаков после запятой
+2026-05-22 18:49:18,877 - utils - INFO - Создание словаря со статистикой по тратам за данный период
+2026-05-22 18:49:18,878 - utils - INFO - <get_frame_expenses> завершила свою работу
+2026-05-22 18:49:18,881 - utils - INFO - Начало работы <get_frame_expenses> для формирования статистики о тратах
+2026-05-22 18:49:18,892 - utils - INFO - Создана сводная таблица с видами трат за отдельный период
+2026-05-22 18:49:18,894 - utils - INFO - Округление значений по категориям до двух знаков после запятой
+2026-05-22 18:49:18,894 - utils - INFO - Создание словаря со статистикой по тратам за данный период
+2026-05-22 18:49:18,895 - utils - INFO - <get_frame_expenses> завершила свою работу
+2026-05-22 18:49:18,898 - utils - INFO - Начало работы <get_frame_expenses> для формирования статистики о тратах
+2026-05-22 18:49:18,908 - utils - INFO - Создана сводная таблица с видами трат за отдельный период
+2026-05-22 18:49:18,910 - utils - INFO - Округление значений по категориям до двух знаков после запятой
+2026-05-22 18:49:18,911 - utils - INFO - Создание словаря со статистикой по тратам за данный период
+2026-05-22 18:49:18,911 - utils - INFO - <get_frame_expenses> завершила свою работу
+2026-05-22 18:49:18,914 - utils - INFO - Начало работы <get_frame_income> для сбора статистики о поступлениях
+2026-05-22 18:49:18,927 - utils - INFO - В данный период были поступления
+2026-05-22 18:49:18,928 - utils - INFO - Завершение работы <get_frame_income>
+2026-05-22 18:49:18,931 - utils - INFO - Начало работы <get_frame_income> для сбора статистики о поступлениях
+2026-05-22 18:49:18,943 - utils - INFO - В данный период были поступления
+2026-05-22 18:49:18,944 - utils - INFO - Завершение работы <get_frame_income>
+2026-05-22 18:49:18,947 - utils - INFO - Начало работы <get_frame_income> для сбора статистики о поступлениях
+2026-05-22 18:49:18,957 - utils - INFO - Поступления в данный период отсутствуют
+2026-05-22 18:49:18,961 - utils - INFO - Начало работы <get_currency_stock_prices> для отображения курсов валют и акций на дату
+2026-05-22 18:49:18,961 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:19,317 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:19,320 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:19,622 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:19,623 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:19,892 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:19,893 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:20,165 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:20,167 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:20,447 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:20,449 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:20,726 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:20,728 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:20,988 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:20,990 - utils - INFO - Создание отчета по валютам и акциям за указанную дату
+2026-05-22 18:49:20,991 - utils - INFO - Завершение <get_currency_stock_prices>
+2026-05-22 18:49:20,995 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:20,997 - utils - ERROR - Обнаружена ошибка: Network problem
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 265, in get_currency_rate
+    response = requests.get(
+               ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+requests.exceptions.ConnectionError: Network problem
+2026-05-22 18:49:21,004 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:21,005 - utils - ERROR - Обнаружена ошибка: Request timeout
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 265, in get_currency_rate
+    response = requests.get(
+               ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+requests.exceptions.Timeout: Request timeout
+2026-05-22 18:49:21,012 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:21,013 - utils - ERROR - Обнаружена ошибка: HTTP error: 404
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 271, in get_currency_rate
+    raise HTTPError(f"HTTP error: {response.status_code}")
+requests.exceptions.HTTPError: HTTP error: 404
+2026-05-22 18:49:21,018 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:21,300 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:21,306 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:21,580 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:21,587 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:21,588 - utils - ERROR - Обнаружена ошибка: Network problem
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 318, in get_stock_price
+    response = requests.get(
+               ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+requests.exceptions.ConnectionError: Network problem
+2026-05-22 18:49:21,594 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:21,596 - utils - ERROR - Обнаружена ошибка: Request timeout
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 318, in get_stock_price
+    response = requests.get(
+               ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+requests.exceptions.Timeout: Request timeout
+2026-05-22 18:49:21,603 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:21,604 - utils - ERROR - Обнаружена ошибка: HTTP error: 404
+Traceback (most recent call last):
+  File "/home/jaineut/PycharmProjects/coursework_1/src/utils.py", line 324, in get_stock_price
+    raise HTTPError(f"HTTP error: {response.status_code}")
+requests.exceptions.HTTPError: HTTP error: 404
+2026-05-22 18:49:27,793 - utils - INFO - Начало работы <get_span_operations> по нахождению транзакций определенного периода
+2026-05-22 18:49:30,922 - utils - INFO - Задание границ периода дат транзакций
+2026-05-22 18:49:30,926 - utils - INFO - Датафрейм за определенный период сформирован
+2026-05-22 18:49:30,926 - utils - INFO - <get_span_operations> закончила свою работу
+2026-05-22 18:49:30,927 - utils - INFO - Начало работы <get_frame_expenses> для формирования статистики о тратах
+2026-05-22 18:49:30,936 - utils - INFO - Создана сводная таблица с видами трат за отдельный период
+2026-05-22 18:49:30,939 - utils - INFO - Округление значений по категориям до двух знаков после запятой
+2026-05-22 18:49:30,939 - utils - INFO - Создание словаря со статистикой по тратам за данный период
+2026-05-22 18:49:30,939 - utils - INFO - <get_frame_expenses> завершила свою работу
+2026-05-22 18:49:30,939 - utils - INFO - Начало работы <get_frame_income> для сбора статистики о поступлениях
+2026-05-22 18:49:30,949 - utils - INFO - Поступления в данный период отсутствуют
+2026-05-22 18:49:30,949 - utils - INFO - Начало работы <get_currency_stock_prices> для отображения курсов валют и акций на дату
+2026-05-22 18:49:30,949 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:31,216 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:31,218 - utils - INFO - Запуск <get_currency_rate>
+2026-05-22 18:49:31,504 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:31,505 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:31,766 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:31,767 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:32,041 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:32,042 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:32,322 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:32,323 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:32,593 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:32,595 - utils - INFO - Запуск <get_stock_price>
+2026-05-22 18:49:32,862 - utils - INFO - Получение данных с сервера
+2026-05-22 18:49:32,864 - utils - INFO - Создание отчета по валютам и акциям за указанную дату
+2026-05-22 18:49:32,864 - utils - INFO - Завершение <get_currency_stock_prices>
