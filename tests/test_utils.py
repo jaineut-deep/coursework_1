@@ -1,17 +1,19 @@
 import datetime
 import os
+from decimal import Decimal
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 import requests
-from decimal import Decimal
 from dotenv import load_dotenv
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from pytest import CaptureFixture
-from unittest.mock import patch
-from src.utils import (get_frame_expenses, get_frame_income, get_currency_stock_prices, get_currency_rate,
-                       get_stock_price, filter_user_choice, file_write_path, filter_choice_spending_workday,
-                       quantize_decimal, get_choice_menu)
+
+from src.utils import (file_write_path, filter_choice_spending_workday, filter_user_choice, get_choice_menu,
+                       get_currency_rate, get_currency_stock_prices, get_frame_expenses, get_frame_income,
+                       get_stock_price, quantize_decimal)
 
 
 def get_year_df() -> DataFrame:
@@ -165,8 +167,8 @@ def test_get_connection_error(get_date_time_obj: datetime.datetime, get_currency
         assert result == "Connection failed"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -182,8 +184,8 @@ def test_get_timeout_error(get_date_time_obj: datetime.datetime, get_currency_st
         assert result == "Request timed out"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -196,14 +198,15 @@ def test_get_http_error(get_date_time_obj: datetime.datetime, get_currency_strin
         mock_response = mock_get.return_value
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            "404 Client Error", response=mock_response)
+            "404 Client Error", response=mock_response
+        )
 
         result = get_currency_rate(get_date_time_obj, get_currency_string)
         assert result == "HTTP error: 404"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_currency_string}/RUB&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -212,7 +215,7 @@ def test_get_http_error(get_date_time_obj: datetime.datetime, get_currency_strin
     [
         (datetime.datetime(2019, 4, 25), "CNY", {"values": [{"close": "9.59"}]}),
         (datetime.datetime(2019, 4, 26), "CNY", {"values": [{"close": "9.62"}]}),
-    ]
+    ],
 )
 def test_get_cny_currency(target_date: datetime.datetime, target_currency: str, mock_value: dict) -> None:
     with patch("src.utils.json.load") as mock_json_load:
@@ -235,8 +238,8 @@ def test_stock_connection_error(get_date_time_obj: datetime.datetime, get_stock_
         assert result == "Connection failed"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -252,8 +255,8 @@ def test_stock_timeout_error(get_date_time_obj: datetime.datetime, get_stock_str
         assert result == "Request timed out"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -266,14 +269,15 @@ def test_stock_http_error(get_date_time_obj: datetime.datetime, get_stock_string
         mock_response = mock_get.return_value
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            "404 Client Error", response=mock_response)
+            "404 Client Error", response=mock_response
+        )
 
         result = get_stock_price(get_date_time_obj, get_stock_string)
         assert result == "HTTP error: 404"
         mock_get.assert_called_once_with(
             f'https://api.twelvedata.com/time_series?apikey={os.getenv("API_KEY")}&interval=1day&symbol='
-            f'{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date='
-            f'{stated_next_date_str} 23:59:00'
+            f"{get_stock_string}&format=JSON&start_date={get_date_time_obj}&type=stock&dp=2&end_date="
+            f"{stated_next_date_str} 23:59:00"
         )
 
 
@@ -304,11 +308,12 @@ def test_filter_user_choice(chosen_date: str, chosen_range: str, expected_tuple:
 
 
 @pytest.mark.usefixtures("capsys")
-def test_invalid_input_date(capsys: CaptureFixture[str], get_non_format_date: str, get_month_range: str,
-                            get_no_answer: str) -> None:
+def test_invalid_input_date(
+    capsys: CaptureFixture[str], get_non_format_date: str, get_month_range: str, get_no_answer: str
+) -> None:
     inputs = [get_non_format_date, get_month_range, get_no_answer]
 
-    with patch('builtins.input', side_effect=inputs):
+    with patch("builtins.input", side_effect=inputs):
         with pytest.raises(SystemExit) as exc_info:
             filter_user_choice()
 
@@ -318,11 +323,12 @@ def test_invalid_input_date(capsys: CaptureFixture[str], get_non_format_date: st
 
 
 @pytest.mark.usefixtures("capsys")
-def test_outrange_input_date(capsys: CaptureFixture[str], get_outside_range_date: str, get_week_range: str,
-                            get_no_answer: str) -> None:
+def test_outrange_input_date(
+    capsys: CaptureFixture[str], get_outside_range_date: str, get_week_range: str, get_no_answer: str
+) -> None:
     inputs = [get_outside_range_date, get_week_range, get_no_answer]
 
-    with patch('builtins.input', side_effect=inputs):
+    with patch("builtins.input", side_effect=inputs):
         with pytest.raises(SystemExit) as exc_info:
             filter_user_choice()
 
@@ -333,7 +339,7 @@ def test_outrange_input_date(capsys: CaptureFixture[str], get_outside_range_date
 
 def test_filter_spending_workday(get_empty_input: str, get_none_input_list: list) -> None:
     user_input = ""
-    with patch('builtins.input', return_value=user_input):
+    with patch("builtins.input", return_value=user_input):
         result = filter_choice_spending_workday()
 
     expected = get_none_input_list[0]
@@ -341,31 +347,37 @@ def test_filter_spending_workday(get_empty_input: str, get_none_input_list: list
 
 
 @pytest.mark.usefixtures("capsys")
-def test_invalid_input_choice_workday(capsys: CaptureFixture[str], get_non_format_date: str,
-                                      get_no_answer: str) -> None:
+def test_invalid_input_choice_workday(
+    capsys: CaptureFixture[str], get_non_format_date: str, get_no_answer: str
+) -> None:
     inputs = [get_non_format_date, get_no_answer]
 
-    with patch('builtins.input', side_effect=inputs):
+    with patch("builtins.input", side_effect=inputs):
         with pytest.raises(SystemExit) as exc_info:
             filter_choice_spending_workday()
 
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "Введите дату вида 'dd.mm.YYYY':\n"'\n''Указанной даты не существует или неверный формат даты\n' in captured.out
+    assert (
+        "Введите дату вида 'dd.mm.YYYY':\n"
+        "\n"
+        "Указанной даты не существует или неверный формат даты\n" in captured.out
+    )
 
 
 @pytest.mark.usefixtures("capsys")
-def test_unreachable_input_choice_workday(capsys: CaptureFixture[str], get_outside_range_date: str,
-                                      get_no_answer: str) -> None:
+def test_unreachable_input_choice_workday(
+    capsys: CaptureFixture[str], get_outside_range_date: str, get_no_answer: str
+) -> None:
     inputs = [get_outside_range_date, get_no_answer]
 
-    with patch('builtins.input', side_effect=inputs):
+    with patch("builtins.input", side_effect=inputs):
         with pytest.raises(SystemExit) as exc_info:
             filter_choice_spending_workday()
 
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "Введите дату вида 'dd.mm.YYYY':\n"'\n''Указанная дата недоступна\n' in captured.out
+    assert "Введите дату вида 'dd.mm.YYYY':\n" "\n" "Указанная дата недоступна\n" in captured.out
 
 
 @pytest.mark.parametrize(
