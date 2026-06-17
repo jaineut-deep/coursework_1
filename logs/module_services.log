@@ -1,0 +1,4 @@
+2026-05-22 18:49:05,743 - services - INFO - Запуск <aggregate_private_transfer>
+2026-05-22 18:49:09,436 - services - INFO - Создание датафрейма по переводам физлицам
+2026-05-22 18:49:09,447 - services - INFO - Формирование статистики по переводам физлицам
+2026-05-22 18:49:09,465 - services - INFO - Завершение <aggregate_private_transfer>
